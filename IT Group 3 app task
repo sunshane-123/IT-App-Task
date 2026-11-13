@@ -1,0 +1,189 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const TaskAlarmApp());
+}
+
+class TaskAlarmApp extends StatelessWidget {
+  const TaskAlarmApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Task Alarm App',
+      theme: ThemeData(
+        primarySwatch: Colors.deepPurple,
+        useMaterial3: true,
+      ),
+      home: const TaskListScreen(),
+    );
+  }
+}
+
+class TaskListScreen extends StatefulWidget {
+  const TaskListScreen({super.key});
+
+  @override
+  State<TaskListScreen> createState() => _TaskListScreenState();
+}
+
+class _TaskListScreenState extends State<TaskListScreen> {
+  // Main data list for tasks
+  final List<String> _tasks = [
+    'Morning Exercise - 07:00 AM',
+    'Study Flutter CRUD - 10:00 AM',
+    'Submit Group Assignment - 11:59 PM',
+  ];
+
+  // Controller for the CREATE TextField
+  final TextEditingController _taskController = TextEditingController();
+
+  @override
+  void dispose() {
+    _taskController.dispose();
+    super.dispose();
+  }
+
+  // CREATE: Add a new item to the list
+  void _addTask() {
+    final text = _taskController.text.trim();
+    if (text.isNotEmpty) {
+      setState(() {
+        _tasks.add(text);
+        _taskController.clear();
+      });
+    } else {
+      // Show snackbar if input is empty
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a task name or alarm detail!')),
+      );
+    }
+  }
+
+  // UPDATE: Show AlertDialog to modify an existing item
+  void _editTask(int index) {
+    final TextEditingController editController =
+        TextEditingController(text: _tasks[index]);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Task / Alarm'),
+          content: TextField(
+            controller: editController,
+            decoration: const InputDecoration(labelText: 'Task details'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (editController.text.trim().isNotEmpty) {
+                  setState(() {
+                    _tasks[index] = editController.text.trim();
+                  });
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // DELETE: Remove item from the list using removeAt(index) inside setState
+  void _deleteTask(int index) {
+    setState(() {
+      _tasks.removeAt(index);
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Task completed & removed!')),
+    );
+  }
+
+  @override
+  PersistentFooterButtons? get persistentFooterButtons => super.persistentFooterButtons;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Task Alarm Core CRUD'),
+        backgroundColor: Colors.deepPurple.shade100,
+      ),
+      body: Column(
+        children: [
+          // CREATE Section: TextField & Add Button
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _taskController,
+                    decoration: const InputDecoration(
+                      labelText: 'Add a new task / alarm',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton.icon(
+                  onPressed: _addTask,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add'),
+                ),
+              ],
+            ),
+          ),
+          const Divider(),
+          // READ Section: Display items dynamically using ListView.builder
+          Expanded(
+            child: _tasks.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No tasks left! All alarms cleared.',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: _tasks.length,
+                    itemBuilder: (context, index) {
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 16.0, vertical: 6.0),
+                        child: ListTile(
+                          leading: const CircleAvatar(
+                            child: Icon(Icons.alarm),
+                          ),
+                          title: Text(_tasks[index]),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // UPDATE Button
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.blue),
+                                onPressed: () => _editTask(index),
+                              ),
+                              // DELETE Button (Task completed action)
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => _deleteTask(index),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
